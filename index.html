@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris</title>
+</head>
+
+<body>
+
+  <canvas id="canvas" width="600" height="800">
+  </canvas>
+  <div>
+    Score: <span id="score">0</span>
+  </div>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const figures = [
+      [
+        [1],
+        [1],
+        [1],
+        [1],
+        [1]
+      ],
+      [
+        [0, 1, 1],
+        [1, 1, 0]
+      ],
+      [
+        [1, 1, 0],
+        [0, 1, 1]
+      ],
+      [
+        [0, 1, 0],
+        [1, 1, 1]
+      ],
+      [
+        [1, 0],
+        [1, 0],
+        [1, 1]
+      ],
+      [
+        [0, 1],
+        [0, 1],
+        [1, 1]
+      ],
+      [
+        [1, 1],
+        [1, 1]
+      ]
+    ];
+
+    const figureColors = [
+      "blue",
+      "red",
+      "green",
+      "yellow",
+      "purple",
+      "orange",
+      "pink"
+    ];
+
+    let originalCanvas = [...Array(20)].map(() => Array(15).fill(0));
+
+    const updateCanvas = () => {
+      ctx.fillStyle = "black";
+      for (let i = 0; i < originalCanvas.length; i++) {
+        for (let j = 0; j < originalCanvas[i].length; j++) {
+          if (originalCanvas[i][j] === 0) {
+            ctx.fillStyle = "black";
+          } else {
+            ctx.fillStyle = figureColors[originalCanvas[i][j] - 1];
+            ctx.strokeStyle = 'white';
+            ctx.strokeRect(j * 40, i * 40, 40, 40);
+          }
+          ctx.fillRect(j * 40, i * 40, 40, 40);
+        }
+      }
+      ctx.fillStyle = figureColors[randomFig];
+      for (let i = 0; i < figure.length; ++i) {
+        for (let j = 0; j < figure[i].length; ++j) {
+          if (figure[i][j] == 1) {
+            ctx.fillRect(loc[0] + j * 40, loc[1] + i * 40, 40, 40);
+            ctx.strokeStyle = 'white';
+            ctx.strokeRect(loc[0] + j * 40, loc[1] + i * 40, 40, 40);
+          }
+        }
+      }
+    }
+
+    let randomFig = Math.floor(Math.random() * figures.length);
+    let figure = figures[randomFig];
+    let loc = [40 * 6, 0];
+    let score = 0;
+    updateCanvas();
+
+    const updateScore = () => {
+      document.getElementById("score").innerHTML = score;
+    }
+
+    const isCollapse = (loc, figure) => {
+      const normalizedLoc = [loc[0] / 40, loc[1] / 40];
+      if (loc[1] + figure.length * 40 > canvas.height) {
+        return true;
+      }
+      if (loc[0] + figure[0].length * 40 > canvas.width || loc[0] < 0) {
+        return true;
+      }
+      for (let i = 0; i < figure.length; ++i) {
+        for (let j = 0; j < figure[i].length; ++j) {
+          if (figure[i][j] == 1) {
+            if (normalizedLoc[1] + i >= originalCanvas.length) {
+              return true;
+            }
+            if (originalCanvas[normalizedLoc[1] + i][normalizedLoc[0] + j] != 0) {
+              return true;
+            }
+            if (normalizedLoc[0] + j < 0 || normalizedLoc[0] + j >= originalCanvas[0].length) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    const rotate = (isLeft) => {
+
+      let ff = figure;
+
+      let newFigure = [];
+      for (let i = 0; i < ff[0].length; ++i) {
+        newFigure[i] = [];
+        let h = ff.length - 1;
+        for (let j = 0; j < ff.length; ++j) {
+          newFigure[i].push(ff[h--][i]);
+        }
+      }
+
+      if (!isLeft) {
+        for (let tmp = 0; tmp < 2; ++tmp) {
+          ff = newFigure;
+          newFigure = [];
+          for (let i = 0; i < ff[0].length; ++i) {
+            newFigure[i] = [];
+            let h = ff.length - 1;
+            for (let j = 0; j < ff.length; ++j) {
+              newFigure[i].push(ff[h--][i]);
+            }
+          }
+        }
+      }
+      return newFigure;
+    }
+
+
+    document.addEventListener("keypress", event => {
+      if (event.key === 'a' || event.key === 'A') {
+        const newLoc = [loc[0] - 40, loc[1]];
+        if (!isCollapse(newLoc, figure)) loc = newLoc;
+      } else if (event.key === 'd' || event.key === 'D') {
+        const newLoc = [loc[0] + 40, loc[1]];
+        if (!isCollapse(newLoc, figure)) loc = newLoc;
+      } else if (event.key === 's' || event.key === 'S') {
+        const newLoc = [loc[0], loc[1] + 40];
+        if (!isCollapse(newLoc, figure)) loc = newLoc;
+      } else if (event.key === 'e' || event.key === 'E') {
+        const newFig = rotate(false);
+        if (!isCollapse(loc, newFig)) figure = newFig;
+      } else if (event.key === 'q' || event.key === 'Q') {
+        const newFig = rotate(true);
+        if (!isCollapse(loc, newFig)) figure = newFig;
+      } else if (event.key === ' ') {
+        let newLoc = loc;
+        while (!isCollapse(newLoc, figure)) {
+          newLoc = [newLoc[0], newLoc[1] + 40];
+        }
+        loc = [newLoc[0], newLoc[1] - 40];
+      }
+      updateCanvas();
+    });
+
+    const resetGame = () => {
+      originalCanvas = [...Array(20)].map(() => Array(15).fill(0));
+      score = 0;
+    }
+
+    const checkAllLines = () => {
+      for (let i = 0; i < originalCanvas.length; ++ i) {
+        let isFull = true;
+        for (let j = 0; j < originalCanvas[i].length; ++j) {
+          if (originalCanvas[i][j] === 0) {
+            isFull = false;
+            break;
+          }
+        }
+        if (isFull) {
+          for (let j = 0; j < originalCanvas[i].length; ++j) {
+            let h = i;
+            while (h > 0) {
+              originalCanvas[h][j] = h > 0 ? originalCanvas[h - 1][j] : 0;
+              --h;
+            }
+          }
+          --i;
+          // isFull = false;
+          score += 10;
+          updateScore();
+        }
+      }
+    }
+
+    setInterval(() => {
+      loc[1] += 40;
+      if (isCollapse(loc, figure)) {
+        let endGame = false;
+        for (let i = 0; i < figure[0].length; ++i) {
+          for (let j = 0; j < figure.length; ++j) {
+            if (figure[j][i] == 1) {
+              originalCanvas[loc[1] / 40 + j - 1][loc[0] / 40 + i] = randomFig + 1;
+              if (loc[1] / 40 + j - 1 <= 0) {
+                alert("Game over");
+                resetGame();
+                endGame = true;
+                break;
+              }
+            }
+            if (endGame) break;
+          }
+        }
+        checkAllLines();
+
+        randomFig = Math.floor(Math.random() * figures.length);
+        figure = figures[randomFig];
+        loc = [40 * 6, 0];
+        updateScore();
+      }
+      updateCanvas();
+    }, 400 - score / 10);
+
+
+  </script>
+</body>
+
+</html>
